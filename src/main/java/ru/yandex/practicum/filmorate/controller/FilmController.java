@@ -1,10 +1,10 @@
-package ru.yandex.practicum.filmorate.controllers;
+package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.Validators.Validator;
-import ru.yandex.practicum.filmorate.Validators.exceptions.NotFoundException;
-import ru.yandex.practicum.filmorate.Validators.exceptions.BadRequestException;
+import ru.yandex.practicum.filmorate.validator.Validator;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import javax.validation.Valid;

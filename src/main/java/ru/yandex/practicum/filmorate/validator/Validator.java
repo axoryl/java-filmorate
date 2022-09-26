@@ -1,8 +1,8 @@
-package ru.yandex.practicum.filmorate.Validators;
+package ru.yandex.practicum.filmorate.validator;
 
 import lombok.extern.slf4j.Slf4j;
-import ru.yandex.practicum.filmorate.Validators.exceptions.NotFoundException;
-import ru.yandex.practicum.filmorate.Validators.exceptions.BadRequestException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
