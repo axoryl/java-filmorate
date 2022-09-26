@@ -11,9 +11,6 @@ import java.time.LocalDate;
 @Slf4j
 public class Validator {
     public static User validateUser(User user) throws BadRequestException, NotFoundException {
-        // Немного не понял зачем в тестах Postman'a, если id нет, то должно вернутся id == 1
-        // Users - create
-        // https://github.com/yandex-praktikum/java-filmorate/blob/controllers-films-users/postman/sprint.json
         if (user.getId() == null) {
             log.info("User id is null");
             user.setId(1L);
