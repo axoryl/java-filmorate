@@ -2,198 +2,286 @@ package ru.yandex.practicum.filmorate.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.core.Is;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.MethodMode;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.BadRequestException;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.user_service.UserServiceImpl;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static ru.yandex.practicum.filmorate.utl.TestModel.getValidUser;
 
-@WebMvcTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@WebMvcTest(UserController.class)
+@Import({UserServiceImpl.class, InMemoryUserStorage.class})
 public class UserControllerTest {
+
     @Autowired
-    UserController userController;
+    private UserController userController;
+
     @Autowired
     private MockMvc mockMvc;
+
     @Autowired
     private ObjectMapper objectMapper;
+
     private static final String USERS_PATH = "/users";
 
     @Test
-    public void whenPostRequestToUsers_requestIsEmpty_thenCorrectResponse() throws Exception {
-        String emptyUser = "";
-
+    void whenPostRequestIsEmpty_thenCorrectResponse() throws Exception {
         mockMvc.perform(post(USERS_PATH)
-                        .content(emptyUser)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isInternalServerError());
     }
 
-    @DirtiesContext(methodMode = MethodMode.BEFORE_METHOD)
     @Test
-    public void whenGetRequestToUsers_thenCorrectResponse() throws Exception {
-        User user = createTestUser(20, "testEmail@mail.com", "test_login",
-                "test_name", LocalDate.of(1991, 8, 20));
-        User user2 = createTestUser(29, "test2Email@mail.com", "test_login2",
-                "test_name2", LocalDate.of(1993, 2, 12));
+    @Order(1)
+    void whenGetRequestGetAllUsers_thenCorrectResponse() throws Exception {
+        final var user = getValidUser();
+        final var user2 = getValidUser();
+        userController.createUser(user);
+        userController.createUser(user2);
 
         mockMvc.perform(get(USERS_PATH)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(objectMapper.writeValueAsString(List.of(user, user2))));
     }
 
     @Test
-    public void whenPostRequestToUsersAndValidUser_thenCorrectResponse() throws Exception {
-        String validUser = "{\"id\": 1, \"email\": \"valid@mail.com\", \"login\": \"valid_Login\"" +
-                ", \"name\": \"Simple Name\", \"birthday\": \"1991-08-20\"}";
+    @Order(2)
+    void whenPostRequestCreateAndValidUser_thenCorrectResponse() throws Exception {
+        final var validUser = getValidUser();
+        validUser.setId(3L);
 
         mockMvc.perform(post(USERS_PATH)
-                        .content(validUser)
+                        .content(objectMapper.writeValueAsString(validUser))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(content().json(validUser));
+                .andExpect(content().json(objectMapper.writeValueAsString(validUser)));
     }
 
     @Test
-    public void whenPostRequestToUsersAndInValidUser_incorrectId_thenCorrectResponse() throws Exception {
-        String inValidUser = "{\"id\": -1, \"email\": \"valid@mail.com\", \"login\": \"valid_Login\"" +
-                ", \"name\": \"Simple Name\", \"birthday\": \"1991-08-20\"}";
+    void whenPostRequestCreateAndUserExists_thenCorrectResponse() throws Exception {
+        final var user = getValidUser();
+        userController.createUser(user);
 
         mockMvc.perform(post(USERS_PATH)
-                        .content(inValidUser)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(result -> assertEquals("Incorrect id",
-                        Objects.requireNonNull(result.getResolvedException()).getMessage()));
-    }
-
-    @Test
-    public void whenPostRequestToUsersAndInValidLogin_null_thenCorrectResponse() throws Exception {
-        String inValidUser = "{\"id\": 2, \"email\": \"valid@mail.com\", \"login\": null" +
-                ", \"name\": \"Simple Name\", \"birthday\": \"1991-08-20\"}";
-
-        mockMvc.perform(post(USERS_PATH)
-                        .content(inValidUser)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    public void whenPostRequestToUsersAndInValidLogin_containsWhiteSpace_thenCorrectResponse() throws Exception {
-        String inValidUser = "{\"id\": 3, \"email\": \"valid@mail.com\", \"login\": \"inValid Login\"" +
-                ", \"name\": \"Simple Name\", \"birthday\": \"1991-08-20\"}";
-
-        mockMvc.perform(post(USERS_PATH)
-                        .content(inValidUser)
+                        .content(objectMapper.writeValueAsString(user))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
-                .andExpect(result -> assertEquals("Invalid login",
+                .andExpect(result -> assertEquals("User already exists",
                         Objects.requireNonNull(result.getResolvedException()).getMessage()));
     }
 
     @Test
-    public void whenPostRequestToUsersAndInValidUserEmail_empty_thenCorrectResponse() throws Exception {
-        String inValidUser = "{\"id\": 4, \"email\": \"\", \"login\": \"valid_Login\"" +
-                ", \"name\": \"Simple Name\", \"birthday\": \"1991-08-20\"}";
+    void whenPostRequestCreateAndInValidUser_incorrectId_thenCorrectResponse() throws Exception {
+        final var inValidUser = getValidUser();
+        inValidUser.setId(-1L);
 
         mockMvc.perform(post(USERS_PATH)
-                        .content(inValidUser)
+                        .content(objectMapper.writeValueAsString(inValidUser))
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isOk());
     }
 
     @Test
-    public void whenPostRequestToUsersAndInValidUserEmail_incorrect_thenCorrectResponse() throws Exception {
-        String inValidUser = "{\"id\": 5, \"email\": \"incorrect?@mail,gg\", \"login\": \"valid_Login\"" +
-                ", \"name\": \"Simple Name\", \"birthday\": \"1991-08-20\"}";
+    void whenPostRequestCreateAndInValidLogin_null_thenCorrectResponse() throws Exception {
+        final var inValidUser = getValidUser();
+        inValidUser.setLogin(null);
 
         mockMvc.perform(post(USERS_PATH)
-                        .content(inValidUser)
+                        .content(objectMapper.writeValueAsString(inValidUser))
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isInternalServerError());
     }
 
     @Test
-    public void whenPostRequestToUsersAndInValidUserBirthday_thenCorrectResponse() throws Exception {
-        String inValidUser = "{\"id\": 6, \"email\": \"valid@mail.com\", \"login\": \"valid_Login\"" +
-                ", \"name\": \"Simple Name\", \"birthday\": \"2991-08-20\"}";
+    void whenPostRequestCreateAndInValidLogin_containsWhiteSpace_thenCorrectResponse() throws Exception {
+        final var inValidUser = getValidUser();
+        inValidUser.setLogin("User Login");
 
         mockMvc.perform(post(USERS_PATH)
-                        .content(inValidUser)
+                        .content(objectMapper.writeValueAsString(inValidUser))
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isInternalServerError());
     }
 
     @Test
-    public void whenPostRequestToUsersAndValidUser_emptyName_thenCorrectResponse() throws Exception {
-        String validUser = "{\"id\": 7, \"email\": \"valid@mail.com\", \"login\": \"valid_Login\"" +
-                ", \"birthday\": \"1991-08-20\"}";
+    void whenPostRequestCreateAndInValidUserEmail_empty_thenCorrectResponse() throws Exception {
+        final var inValidUser = getValidUser();
+        inValidUser.setEmail("");
 
         mockMvc.perform(post(USERS_PATH)
-                        .content(validUser)
+                        .content(objectMapper.writeValueAsString(inValidUser))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void whenPostRequestCreateAndInValidUserEmail_incorrect_thenCorrectResponse() throws Exception {
+        final var inValidUser = getValidUser();
+        inValidUser.setEmail("incorrect@?mail><.com");
+
+        mockMvc.perform(post(USERS_PATH)
+                        .content(objectMapper.writeValueAsString(inValidUser))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void whenPostRequestCreateAndInValidUserBirthday_thenCorrectResponse() throws Exception {
+        final var inValidUser = getValidUser();
+        inValidUser.setBirthday(LocalDate.now().plusDays(1));
+
+        mockMvc.perform(post(USERS_PATH)
+                        .content(objectMapper.writeValueAsString(inValidUser))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void whenPostRequestCreateAndValidUser_emptyName_thenCorrectResponse() throws Exception {
+        final var validUser = getValidUser();
+        final String login = validUser.getLogin();
+        validUser.setName("");
+
+        mockMvc.perform(post(USERS_PATH)
+                        .content(objectMapper.writeValueAsString(validUser))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name", Is.is("valid_Login")));
+                .andExpect(jsonPath("$.name", Is.is(login)));
     }
 
     @Test
-    public void whenPutRequestToUsersAndValidUser_thenCorrectResponse() throws Exception {
-        createTestUser(8, "valid@mail.com", "valid_login",
-                "Simple Name", LocalDate.of(1991, 8, 20));
-        String validUpdatedUser = "{\"id\": 8, \"email\": \"updated_valid@mail.com\", \"login\": \"updated_login\"" +
-                ", \"name\": \"Updated Name\", \"birthday\": \"1991-08-20\"}";
+    void whenPutRequestUpdateAndValidUser_thenCorrectResponse() throws Exception {
+        final var user = userController.createUser(getValidUser());
+        final var updatedUser = getValidUser();
+        updatedUser.setId(user.getId());
+        updatedUser.setLogin("UpdatedLogin");
+        updatedUser.setName("Updated Name");
+        updatedUser.setEmail("updated@mail.com");
+        updatedUser.setBirthday(LocalDate.of(2000, 1, 1));
 
         mockMvc.perform(put(USERS_PATH)
-                        .content(validUpdatedUser)
+                        .content(objectMapper.writeValueAsString(updatedUser))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(8))
-                .andExpect(jsonPath("$.email").value("updated_valid@mail.com"))
-                .andExpect(jsonPath("$.login").value("updated_login"))
+                .andExpect(jsonPath("$.id").value(user.getId()))
+                .andExpect(jsonPath("$.email").value("updated@mail.com"))
+                .andExpect(jsonPath("$.login").value("UpdatedLogin"))
                 .andExpect(jsonPath("$.name").value("Updated Name"));
     }
 
     @Test
-    public void whenPutRequestToUsersAndInValidUser_thenCorrectResponse() throws Exception {
-        createTestUser(9, "valid@mail.com", "valid_login",
-                "Simple Name", LocalDate.of(1991, 8, 20));
-        String inValidUpdatedUser = "{\"id\": -1, \"email\": \"updated_valid@mail.com\", \"login\": \"updated_login\"" +
-                ", \"name\": \"Updated Name\", \"birthday\": \"1991-08-20\"}";
+    void whenGetRequestGetUserById_thenCorrectResponse() throws Exception {
+        final var user = userController.createUser(getValidUser());
 
-        mockMvc.perform(put(USERS_PATH)
-                        .content(inValidUpdatedUser)
+        mockMvc.perform(get(USERS_PATH + "/" + user.getId())
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(result -> assertEquals("Incorrect id",
-                        Objects.requireNonNull(result.getResolvedException()).getMessage()));
+                .andExpect(status().isOk())
+                .andExpect(content().json(objectMapper.writeValueAsString(user)));
     }
 
-    private User createTestUser(long id, String email, String login, String name, LocalDate birthday)
-            throws BadRequestException, NotFoundException {
+    @Test
+    void whenGetRequestGetUserFriends_thenCorrectResponse() throws Exception {
+        final var user = userController.createUser(getValidUser());
 
-        User user = User.builder().id(id)
-                .email(email)
-                .login(login)
-                .name(name)
-                .birthday(birthday)
-                .build();
+        mockMvc.perform(get(USERS_PATH + "/" + user.getId() + "/friends")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
 
-        userController.createUser(user);
-        return user;
+    @Test
+    void whenGetRequestGetUserFriends_userNotExists_thenCorrectResponse() throws Exception {
+        mockMvc.perform(get(USERS_PATH + "/" + 9999 + "/friends")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void whenGetRequestGetMutualFriends_thenCorrectResponse() throws Exception {
+        final var user = userController.createUser(getValidUser());
+        final var user2 = userController.createUser(getValidUser());
+
+        mockMvc.perform(get(USERS_PATH + "/" + user.getId() + "/friends/common/" + user2.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void whenGetRequestGetMutualFriends_userNotExists_thenCorrectResponse() throws Exception {
+        final var user2 = userController.createUser(getValidUser());
+
+        mockMvc.perform(get(USERS_PATH + "/" + 8888 + "/friends/common/" + user2.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void whenGetRequestGetMutualFriends_user2NotExists_thenCorrectResponse() throws Exception {
+        final var user = userController.createUser(getValidUser());
+
+        mockMvc.perform(get(USERS_PATH + "/" + user.getId() + "/friends/common/" + 9999)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void whenPutRequestAddFriend_thenCorrectResponse() throws Exception {
+        final var user = userController.createUser(getValidUser());
+        final var user2 = userController.createUser(getValidUser());
+
+        mockMvc.perform(put(USERS_PATH + "/" + user.getId() + "/friends/" + user2.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        assertEquals(1, user.getFriends().size());
+        assertEquals(1, user2.getFriends().size());
+    }
+
+    @Test
+    void whenPutRequestAddFriend_userNotExists_thenCorrectResponse() throws Exception {
+        final var user2 = userController.createUser(getValidUser());
+
+        mockMvc.perform(put(USERS_PATH + "/" + 9999 + "/friends/" + user2.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void whenPutRequestAddFriend_user2NotExists_thenCorrectResponse() throws Exception {
+        final var user = userController.createUser(getValidUser());
+
+        mockMvc.perform(put(USERS_PATH + "/" + user.getId() + "/friends/" + 9999)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void whenDeleteRequestDeleteFriend() throws Exception {
+        final var user = userController.createUser(getValidUser());
+        final var user2 = userController.createUser(getValidUser());
+        user.getFriends().add(user2.getId());
+        user2.getFriends().add(user.getId());
+
+        mockMvc.perform(delete(USERS_PATH + "/" + user.getId() + "/friends/" + user2.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        assertEquals(0, user.getFriends().size());
+        assertEquals(0, user2.getFriends().size());
     }
 }
