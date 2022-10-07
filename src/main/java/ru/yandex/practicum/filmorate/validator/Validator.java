@@ -7,7 +7,7 @@ import ru.yandex.practicum.filmorate.model.User;
 public class Validator {
     public static User validateUser(final User user) {
         if (user.getName() == null || user.getName().isEmpty()) {
-            log.info("Empty name[{}], change to login=[{}]", user.getName(), user.getLogin());
+            log.info("User contain empty name, change to login=[{}]", user.getLogin());
             user.setName(user.getLogin());
         }
         return user;
