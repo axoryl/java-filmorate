@@ -21,7 +21,7 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Film getFilmById(final Long id) {
-        var film = filmStorage.findById(id);
+        final var film = filmStorage.findById(id);
         throwExceptionIfNotExists(film);
 
         return film;
@@ -68,8 +68,8 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public void like(final Long filmId, final Long userId) {
-        var film = filmStorage.findById(filmId);
-        var user = userStorage.findById(userId);
+        final var film = filmStorage.findById(filmId);
+        final var user = userStorage.findById(userId);
 
         throwExceptionIfNotExists(film);
         if (user == null) {

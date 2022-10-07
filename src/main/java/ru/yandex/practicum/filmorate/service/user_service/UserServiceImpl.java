@@ -21,7 +21,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserById(final Long id) {
-        var user = userStorage.findById(id);
+        final var user = userStorage.findById(id);
 
         throwExceptionIfNotExists(user);
 

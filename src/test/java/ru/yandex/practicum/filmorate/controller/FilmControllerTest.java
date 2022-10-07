@@ -22,8 +22,8 @@ import java.util.Objects;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static ru.yandex.practicum.filmorate.utl.TestModel.getValidFilm;
-import static ru.yandex.practicum.filmorate.utl.TestModel.getValidUser;
+import static ru.yandex.practicum.filmorate.util.TestModel.getValidFilm;
+import static ru.yandex.practicum.filmorate.util.TestModel.getValidUser;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @WebMvcTest({FilmController.class, UserController.class})
