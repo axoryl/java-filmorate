@@ -73,7 +73,7 @@ public class FilmServiceImpl implements FilmService {
 
         throwExceptionIfNotExists(film);
         if (user == null) {
-            throw  new NotFoundException("The user does not exist");
+            throw new NotFoundException("The user does not exist");
         }
 
         film.getLikes().add(userId);
@@ -86,7 +86,7 @@ public class FilmServiceImpl implements FilmService {
 
         throwExceptionIfNotExists(film);
         if (user == null) {
-            throw  new NotFoundException("The user does not exist");
+            throw new NotFoundException("The user does not exist");
         }
 
         film.getLikes().remove(userId);
