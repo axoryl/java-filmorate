@@ -2,7 +2,7 @@ package ru.yandex.practicum.filmorate.service.film_service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.FilmAlreadyExistsException;
+import ru.yandex.practicum.filmorate.exception.AlreadyExistsException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -50,7 +50,7 @@ public class FilmServiceImpl implements FilmService {
     public Film createFilm(final Film film) {
         final var film2 = filmStorage.findById(film.getId());
         if (film2 != null) {
-            throw new FilmAlreadyExistsException("Film already exists");
+            throw new AlreadyExistsException("Film already exists");
         }
         return filmStorage.save(film);
     }

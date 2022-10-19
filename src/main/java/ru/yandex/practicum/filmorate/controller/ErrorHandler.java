@@ -4,9 +4,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.yandex.practicum.filmorate.exception.FilmAlreadyExistsException;
+import ru.yandex.practicum.filmorate.exception.AlreadyExistsException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.UserAlreadyExistsException;
 import ru.yandex.practicum.filmorate.model.ErrorResponse;
 
 @RestControllerAdvice
@@ -20,13 +19,7 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleUserAlreadyExists(final UserAlreadyExistsException e) {
-        return new ErrorResponse(e.getMessage());
-    }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleFilmAlreadyExists(final FilmAlreadyExistsException e) {
+    public ErrorResponse handleUserAlreadyExists(final AlreadyExistsException e) {
         return new ErrorResponse(e.getMessage());
     }
 

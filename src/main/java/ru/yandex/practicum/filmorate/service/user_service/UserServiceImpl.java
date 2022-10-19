@@ -3,7 +3,7 @@ package ru.yandex.practicum.filmorate.service.user_service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.UserAlreadyExistsException;
+import ru.yandex.practicum.filmorate.exception.AlreadyExistsException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -60,7 +60,7 @@ public class UserServiceImpl implements UserService {
         final var validUser = validateUser(user);
         final var user2 = userStorage.findById(user.getId());
         if (user2 != null) {
-            throw new UserAlreadyExistsException("User already exists");
+            throw new AlreadyExistsException("User already exists");
         }
         return userStorage.save(validUser);
     }
