@@ -45,11 +45,15 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public List<Film> getMostLikedFilms(Integer count) {
         List<Long> filmsId = filmLikeService.getMostLikedFilms(count);
+        List<Film> films;
+
         if (filmsId.isEmpty()) {
-            return filmDao.findAllWithLimit(count);
+            films = filmDao.findAllWithLimit(count);
+        } else {
+            films = filmDao.findByIds(filmsId);
         }
 
-        return filmDao.findByIds(filmsId).stream()
+        return films.stream()
                 .map(this::setGenres)
                 .collect(Collectors.toList());
     }
